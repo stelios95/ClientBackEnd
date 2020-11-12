@@ -19,7 +19,7 @@ async function getSearchResults(searchTerm, res) {
     );
     const results = await Site.find(
       { $text: { $search: processedSearchTerm } },
-      { score: { $meta: "textScore" }, loc: 1, title: 1, _id: 0 }
+      { score: { $meta: "textScore" }, loc: 1, title: 1, _id: 0, lastmod: 1 }
     ).sort({ score: { $meta: "textScore" } });
     res.status(200).send(results);
   } catch (err) {
