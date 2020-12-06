@@ -8,14 +8,14 @@ const textProcessUtils = require("./textProcessUtils");
 app.use(cors());
 
 searchRoutes.route("/search").post((req, res) => {
-  getSearchResults(req.body.searchTerm, res);
+  getSearchResults(req.body, res);
 });
 
-async function getSearchResults(searchTerm, res) {
+async function getSearchResults(reqbody, res) {
   try {
     console.log("inside");
     const processedSearchTerm = textProcessUtils.getProcessedContent(
-      searchTerm
+      reqbody.searchTerm
     );
     const results = await Site.find(
       { $text: { $search: processedSearchTerm } },
