@@ -1,12 +1,10 @@
 const express = require("express");
+const API_CONSTANTS = require("./apiConstants")
 const searchRoutes = express.Router();
 const cors = require("cors");
 const app = express();
 const Site = require("./siteSchema");
 const textProcessUtils = require("./textProcessUtils");
-const SORT_BY_RELEVANCE = 'relevance'
-const SORT_BY_OLD_FIRST = 'dateOld'
-const SORT_BY_NEW_FIRST = 'dateNew'
 
 app.use(cors());
 
@@ -19,85 +17,56 @@ async function getSearchResults(reqbody, res) {
     const processedSearchTerm = textProcessUtils.getProcessedContent(
       reqbody.searchTerm
     );
-    // const params = createQueryParams(reqbody, processedSearchTerm);
-    //console.log(JSON.stringify(params));
-    // const queryFilter = getQueryFilter(params);
-    //console.log(JSON.stringify(queryFilter));
-    const sortFilter = getSortFilter(reqbody)
-    console.log('SORT BY: ' + JSON.stringify(sortFilter))
     const results = await Site.find(
-      { $text: { $search: processedSearchTerm } },
+      getQueryFilter(reqbody, processedSearchTerm),
       { score: { $meta: "textScore" }, loc: 1, title: 1, _id: 0, lastmod: 1 }
-    ).sort(sortFilter);
-    // console.log("Results: " + results);
+    ).sort(getSortFilter(reqbody));
     res.status(200).send(results);
   } catch (err) {
-    console.log(err);
     res.status(400).send(err);
   }
 }
 
 function getSortFilter (reqBody) {
   switch(reqBody.sortBy) {
-    case SORT_BY_RELEVANCE:
+    case API_CONSTANTS.SORT_BY_RELEVANCE:
       return  { score: { $meta: "textScore" } }
-    case SORT_BY_OLD_FIRST:
+    case API_CONSTANTS.SORT_BY_OLD_FIRST:
       return { lastmod: 1 }
-    case SORT_BY_NEW_FIRST:
+    case API_CONSTANTS.SORT_BY_NEW_FIRST:
       return { lastmod: -1 }
   }
 }
-// function getSearchTerm (searchConfigs, processedTerm){
-//   const searchTerm = {
-//     $text: {    
-//   }}
-//   if (searchConfigs.isExactTermSearch === "true")
-//     searchTerm = {
-      
-//     } '"' + processedTerm + '"';
-//   else qParams.searchTerm = processedTerm;
-// }
-// function createQueryParams(searchConfigs, processedTerm) {
-//   const qParams = {};
-//   // Search Term
-//   if (searchConfigs.isExactTermSearch === "true")
-//     qParams.searchTerm = '"' + processedTerm + '"';
-//   else qParams.searchTerm = processedTerm;
 
-//   // Timeframe
-//   let date = new Date();
-//   switch (searchConfigs.timeframe) {
-//     case "today":
-//       qParams.date = date.setDate(date.getDate() - 1);
-//       break;
-//     case "lastMonth":
-//       qParams.date = date.setMonth(date.getMonth() - 1);
-//       break;
-//     case "lastYear":
-//       qParams.date = date.setMonth(date.getMonth() - 12);
-//       break;
-//     case "allTime":
-//       qParams.date = 0;
-//       break;
-//   }
-//   return qParams;
-// }
-
-// function queryByRelevance(params) {
-//   if (params.date) {
-//     return {
-//       $text: {
-//         $search: params.searchTerm,
-//       },
-//       lastmod: { $gt: params.date },
-//     };
-//   } else {
-//     return {
-//       $text: {
-//         $search: params.searchTerm,
-//       },
-//     };
-//   }
-// }
+function getQueryFilter (reqBody, processedSearchTerm) {
+  // Timeframe
+  let date = new Date();
+  let queryDate 
+  switch (reqBody.timeframe) {
+    case API_CONSTANTS.FILTER_TODAY:
+      newDate = new Date(date.setDate(date.getDate() - 1))
+      queryDate = new Date(newDate.setHours(00, 00, 00))
+      break;
+    case API_CONSTANTS.FILTER_LAST_MONTH:
+      newDate = new Date(date.setMonth(date.getMonth() - 1))
+      queryDate = new Date(newDate.setHours(00, 00, 00))
+      break;
+    case API_CONSTANTS.FILTER_LAST_YEAR:
+      newDate = new Date(date.setFullYear(date.getFullYear() - 1))
+      queryDate = new Date(newDate.setHours(00, 00, 00))
+      break;
+    case API_CONSTANTS.FILTER_ALL_TIME:
+      queryDate = 0;
+      break;
+  }
+  if (!queryDate){
+    return { $text: { $search: processedSearchTerm }}
+  } else {
+    return { $text: { $search: processedSearchTerm }, lastmod: {
+      $gte: queryDate,
+      $lt: new Date(new Date().setHours(23, 59, 59))
+    }}
+  }
+}
 
 module.exports = searchRoutes;
