@@ -23,6 +23,7 @@ async function getSearchResults(reqbody, res) {
     ).sort(getSortFilter(reqbody));
     res.status(200).send(results);
   } catch (err) {
+    console.log(err)
     res.status(400).send(err);
   }
 }
@@ -39,7 +40,6 @@ function getSortFilter (reqBody) {
 }
 
 function getQueryFilter (reqBody, processedSearchTerm) {
-  // Timeframe
   let date = new Date();
   let queryDate 
   switch (reqBody.timeframe) {
@@ -59,13 +59,24 @@ function getQueryFilter (reqBody, processedSearchTerm) {
       queryDate = 0;
       break;
   }
-  if (!queryDate){
-    return { $text: { $search: processedSearchTerm }}
+  if (reqBody.isExactTermSearch === API_CONSTANTS.SEARCH_EXACT_PHRASE) {
+    if (!queryDate){
+      return { $text: { $search: `\"${processedSearchTerm}\"`}}
+    } else {
+      return { $text: { $search: `\"${processedSearchTerm}\"` }, lastmod: {
+        $gte: queryDate,
+        $lt: new Date(new Date().setHours(23, 59, 59))
+      }}
+    }
   } else {
-    return { $text: { $search: processedSearchTerm }, lastmod: {
-      $gte: queryDate,
-      $lt: new Date(new Date().setHours(23, 59, 59))
-    }}
+    if (!queryDate){
+      return { $text: { $search: processedSearchTerm }}
+    } else {
+      return { $text: { $search: processedSearchTerm }, lastmod: {
+        $gte: queryDate,
+        $lt: new Date(new Date().setHours(23, 59, 59))
+      }}
+    }
   }
 }
 
