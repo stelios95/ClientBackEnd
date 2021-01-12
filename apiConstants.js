@@ -16,7 +16,7 @@ const FILTER_RANGE = 'range'
 const SEARCH_EXACT_PHRASE = 'true'
 
 //result limit
-const RETURNED_DOCS_LIMIT = 1500
+const RETURNED_DOCS_LIMIT = 1200
 
 //Database Strings
 const DATABASE_PREFIX = "mongodb+srv://dbAdmin:"
