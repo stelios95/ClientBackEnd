@@ -20,7 +20,7 @@ async function getSearchResults(reqbody, res) {
     const results = await Site.find(
       getQueryFilter(reqbody, processedSearchTerm),
       { score: { $meta: "textScore" }, loc: 1, title: 1, _id: 0, lastmod: 1 }
-    ).sort(getSortFilter(reqbody));
+    ).sort(getSortFilter(reqbody)).limit(API_CONSTANTS.RETURNED_DOCS_LIMIT);
     res.status(200).send(results);
   } catch (err) {
     console.log(err)

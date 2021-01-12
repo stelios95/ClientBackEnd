@@ -5,6 +5,7 @@ const bodyParser = require("body-parser");
 const getPwd = require("./databasePasswordFetch");
 const cors = require("cors");
 const searchRoute = require("./routes");
+const API_CONSTANTS = require("./apiConstants")
 const PORT = process.env.PORT || 5000;
 
 app.use(cors());
@@ -14,10 +15,7 @@ app.use("/searchApi", searchRoute);
 
 // connect to database
 const pwd = getPwd();
-const mongoUrl =
-  "mongodb+srv://dbAdmin:" +
-  pwd +
-  "@cluster0-xy1h1.mongodb.net/test?retryWrites=true&w=majority";
+const mongoUrl = API_CONSTANTS.DATABASE_PREFIX + pwd + API_CONSTANTS.DATABASE_SUFFIX
 
 //connect to MongoDBo on Atlas
 async function connectToMongo() {
